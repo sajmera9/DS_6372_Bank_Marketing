@@ -1,0 +1,203 @@
+---
+title: "Project_2_EDA"
+author: "Satvik Ajmera"
+output: html_notebook
+editor_options: 
+  chunk_output_type: inline
+---
+4. Relevant Information:
+
+   The data is related with direct marketing campaigns of a Portuguese banking institution. 
+   The marketing campaigns were based on phone calls. Often, more than one contact to the same client was required, 
+   in order to access if the product (bank term deposit) would be (or not) subscribed. 
+
+   There are two datasets: 
+      1) bank-full.csv with all examples, ordered by date (from May 2008 to November 2010).
+      2) bank.csv with 10% of the examples (4521), randomly selected from bank-full.csv.
+   The smallest dataset is provided to test more computationally demanding machine learning algorithms (e.g. SVM).
+
+   The classification goal is to predict if the client will subscribe a term deposit (variable y).
+
+5. Number of Instances: 45211 for bank-full.csv (4521 for bank.csv)
+
+6. Number of Attributes: 16 + output attribute.
+
+7. Attribute information:
+
+   For more information, read [Moro et al., 2011].
+
+   Input variables:
+   # bank client data:
+   1 - age (numeric)
+   2 - job : type of job (categorical: "admin.","unknown","unemployed","management","housemaid","entrepreneur","student",
+                                       "blue-collar","self-employed","retired","technician","services") 
+   3 - marital : marital status (categorical: "married","divorced","single"; note: "divorced" means divorced or widowed)
+   4 - education (categorical: "unknown","secondary","primary","tertiary")
+   5 - default: has credit in default? (binary: "yes","no")
+   6 - balance: average yearly balance, in euros (numeric) 
+   7 - housing: has housing loan? (binary: "yes","no")
+   8 - loan: has personal loan? (binary: "yes","no")
+   # related with the last contact of the current campaign:
+   9 - contact: contact communication type (categorical: "unknown","telephone","cellular") 
+  10 - day: last contact day of the month (numeric)
+  11 - month: last contact month of year (categorical: "jan", "feb", "mar", ..., "nov", "dec")
+  12 - duration: last contact duration, in seconds (numeric)
+   # other attributes:
+  13 - campaign: number of contacts performed during this campaign and for this client (numeric, includes last contact)
+  14 - pdays: number of days that passed by after the client was last contacted from a previous campaign (numeric, -1 means client was not previously contacted)
+  15 - previous: number of contacts performed before this campaign and for this client (numeric)
+  16 - poutcome: outcome of the previous marketing campaign (categorical: "unknown","other","failure","success")
+
+  Output variable (desired target):
+  17 - y - has the client subscribed a term deposit? (binary: "yes","no")
+
+8. Missing Attribute Values: None
+
+
+```{r}
+library(tidyverse)
+bank_full.path <- file.choose()
+bank_full = read.csv(bank_full.path, header = TRUE, sep = ";")
+head(bank_full)
+bank_full
+summary(bank_full)
+```
+response (y)
+has the client subscribed a term deposit?
+no: 39922
+yes: 5289
+
+```{r}
+attach(bank_full)
+prop.table(table(y,duration),2)
+
+plot(y~duration,col=c("red","blue"))
+t(aggregate(y~duration,data=bank_full,summary))
+plot(y~duration,col=c("red","blue"))
+```
+```{r}
+colnames(bank_full)
+```
+
+```{r}
+#to get proportions that make sense
+prop.table(table(y,job),2)
+prop.table(table(y,age),2)
+prop.table(table(y,marital),2)
+prop.table(table(y,balance),2)
+prop.table(table(y,education),2)
+prop.table(table(y,duration),2)
+prop.table(table(y,campaign),2)
+prop.table(table(y,housing),2)
+prop.table(table(y,contact),2)
+prop.table(table(y,day),2)
+prop.table(table(y,month),2)
+prop.table(table(y,poutcome),2)
+prop.table(table(y,pdays),2)
+prop.table(table(y,previous),2)
+prop.table(table(y,loan),2)
+
+
+#Visualize
+plot(y~job,col=c("red","blue"))
+plot(y~age,col=c("red","blue"))
+plot(y~marital,col=c("red","blue"))
+#Visualize
+plot(y~balance,col=c("red","blue"))
+plot(y~education,col=c("red","blue"))
+plot(y~duration,col=c("red","blue"))
+plot(y~marital,col=c("red","blue"))
+
+plot(y~campaign,col=c("red","blue"))
+plot(y~housing,col=c("red","blue"))
+plot(y~contact,col=c("red","blue"))
+plot(y~day,col=c("red","blue"))
+plot(y~month,col=c("red","blue"))
+plot(y~poutcome,col=c("red","blue"))
+plot(y~pdays,col=c("red","blue"))
+plot(y~previous,col=c("red","blue"))
+plot(y~loan,col=c("red","blue"))
+```
+
+```{r}
+prop.table(table(y,age),2)
+plot(y~age,col=c("purple","white","green"))
+table(y,age)
+#function for the table above
+proportion_plot <- function(predictor) {
+  plot(y~predictor,col=c("purple","white","green"))
+  table(y,predictor)
+}
+proportion_plot(balance)
+
+
+```
+   1 - age (numeric)
+   2 - job : type of job (categorical: "admin.","unknown","unemployed","management","housemaid","entrepreneur","student",
+                                       "blue-collar","self-employed","retired","technician","services") 
+   3 - marital : marital status (categorical: "married","divorced","single"; note: "divorced" means divorced or widowed)
+   4 - education (categorical: "unknown","secondary","primary","tertiary")
+   5 - default: has credit in default? (binary: "yes","no")
+   6 - balance: average yearly balance, in euros (numeric) 
+   7 - housing: has housing loan? (binary: "yes","no")
+   8 - loan: has personal loan? (binary: "yes","no")
+   # related with the last contact of the current campaign:
+   9 - contact: contact communication type (categorical: "unknown","telephone","cellular") 
+  10 - day: last contact day of the month (numeric)
+  11 - month: last contact month of year (categorical: "jan", "feb", "mar", ..., "nov", "dec")
+  12 - duration: last contact duration, in seconds (numeric)
+   # other attributes:
+  13 - campaign: number of contacts performed during this campaign and for this client (numeric, includes last contact)
+  14 - pdays: number of days that passed by after the client was last contacted from a previous campaign (numeric, -1 means client was not previously contacted)
+  15 - previous: number of contacts performed before this campaign and for this client (numeric)
+  16 - poutcome: outcome of the previous marketing campaign (categorical: "unknown","other","failure","success")
+
+  Output variable (desired target):
+  17 - y - has the client subscribed a term deposit? (binary: "yes","no")
+```{r}
+
+newBankFull <- bank_full[-c(2:5,7:9,11,12,15,16:17)]
+summary(newBankFull)
+pc.result<-prcomp(newBankFull,scale.=TRUE)
+pc.scores<-pc.result$x
+pc.scores<-data.frame(pc.scores)
+pc.scores$y<-newBankFull$y
+eigenvals<-(pc.result$sdev)^2
+
+plot(1:5,eigenvals/sum(eigenvals),type="l",main="Scree Plot PC's",ylab="Prop. Var. Explained",ylim=c(0,1))
+cumulative.prop<-cumsum(eigenvals/sum(eigenvals))
+lines(1:5,cumulative.prop,lty=2)
+#bad seperation using continuous predictors. PCA doesn't help too much here.
+ggplot(data = pc.scores, aes(x = PC1, y = PC2)) +
+  geom_point(aes(col=y), size=1)+
+  ggtitle("PCA of Bank")
+```
+
+```{r}
+library(ROCR)
+library(MASS)
+newBankmodel <- bank_full[-c(2:5,7:9,11,12,15,16)]
+set.seed(1234)
+index<-sample(1:45211,11000,replace=FALSE)
+test<-newBankmodel[-index,]
+newBankm<-newBankmodel[index,]
+mylda<- lda(y ~ age+balance+day+campaign+pdays, data = newBankm)
+myqda<- qda(y ~ age+balance+day+campaign+pdays, data = newBankm)
+# myqda<- qda(mpg ~ displacement+horsepower+weight+acceleration, data = newAuto)
+prd<-predict(mylda, newdata = test)$class
+table(prd,test$y)
+q.prd<-predict(myqda, newdata = test)$class
+table(q.prd,test$y)
+```
+
+
+```{r}
+library(aplore3)
+?glow_bonemed
+
+bonemed_fu
+```
+
+
+
+
