@@ -1,6 +1,8 @@
 ---
 title: "6373_Project_2"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 
@@ -51,8 +53,25 @@ output: html_document
 
 8. Missing Attribute Values: There are several missing values in some categorical attributes, all coded with the "unknown" label. These missing values can be treated as a possible class label or using deletion or imputation techniques. 
 
-```{r}
+```{r Import Bank Additional Full data set}
 library(tidyverse)
+library(ggplot2)
+library(GGally)
 
+bankdata <- read.csv("bank-additional-full.csv", header=TRUE, sep = ';')
+summary(bankdata)
+```
+
+```{r GGpairs Variables 1-7}
+ggpairs(bankdata,columns = 1:7,aes(color=y),progress = FALSE)
+
+```
+
+```{r GGpairs Variables 8-11}
+ggpairs(bankdata,columns = 8:11,aes(color=y),progress=FALSE)
+```
+
+```{r GGpairs Variables 12-20}
+ggpairs(bankdata,columns = 12:20,aes(color=y), progress=FALSE)
 
 ```
