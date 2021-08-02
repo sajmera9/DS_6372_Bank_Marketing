@@ -3,69 +3,75 @@ title: "Project_2_EDA"
 author: "Satvik Ajmera"
 output: html_notebook
 editor_options: 
-  chunk_output_type: inline
+  chunk_output_type: console
 ---
-4. Relevant Information:
 
-   The data is related with direct marketing campaigns of a Portuguese banking institution. 
-   The marketing campaigns were based on phone calls. Often, more than one contact to the same client was required, 
-   in order to access if the product (bank term deposit) would be (or not) subscribed. 
+The data is related with direct marketing campaigns (phone calls) of a Portuguese banking institution. The classification goal is to predict if the client will subscribe a term deposit (variable y).
 
-   There are two datasets: 
-      1) bank-full.csv with all examples, ordered by date (from May 2008 to November 2010).
-      2) bank.csv with 10% of the examples (4521), randomly selected from bank-full.csv.
-   The smallest dataset is provided to test more computationally demanding machine learning algorithms (e.g. SVM).
+  The zip file includes two datasets: 
+      1) bank-additional-full.csv with all examples, ordered by date (from May 2008 to November 2010).
+      2) bank-additional.csv with 10% of the examples (4119), randomly selected from bank-additional-full.csv.
+   The smallest dataset is provided to test more computationally demanding machine learning algorithms (e.g., SVM).
 
-   The classification goal is to predict if the client will subscribe a term deposit (variable y).
+   The binary classification goal is to predict if the client will subscribe a bank term deposit (variable y).
 
-5. Number of Instances: 45211 for bank-full.csv (4521 for bank.csv)
+5. Number of Instances: 41188 for bank-additional-full.csv
 
-6. Number of Attributes: 16 + output attribute.
+6. Number of Attributes: 20 + output attribute.
 
 7. Attribute information:
 
-   For more information, read [Moro et al., 2011].
+   For more information, read [Moro et al., 2014].
 
    Input variables:
    # bank client data:
    1 - age (numeric)
-   2 - job : type of job (categorical: "admin.","unknown","unemployed","management","housemaid","entrepreneur","student",
-                                       "blue-collar","self-employed","retired","technician","services") 
-   3 - marital : marital status (categorical: "married","divorced","single"; note: "divorced" means divorced or widowed)
-   4 - education (categorical: "unknown","secondary","primary","tertiary")
-   5 - default: has credit in default? (binary: "yes","no")
-   6 - balance: average yearly balance, in euros (numeric) 
-   7 - housing: has housing loan? (binary: "yes","no")
-   8 - loan: has personal loan? (binary: "yes","no")
+   2 - job : type of job (categorical: "admin.","blue-collar","entrepreneur","housemaid","management","retired","self-employed","services","student","technician","unemployed","unknown")
+   3 - marital : marital status (categorical: "divorced","married","single","unknown"; note: "divorced" means divorced or widowed)
+   4 - education (categorical: "basic.4y","basic.6y","basic.9y","high.school","illiterate","professional.course","university.degree","unknown")
+   5 - default: has credit in default? (categorical: "no","yes","unknown")
+   6 - housing: has housing loan? (categorical: "no","yes","unknown")
+   7 - loan: has personal loan? (categorical: "no","yes","unknown")
    # related with the last contact of the current campaign:
-   9 - contact: contact communication type (categorical: "unknown","telephone","cellular") 
-  10 - day: last contact day of the month (numeric)
-  11 - month: last contact month of year (categorical: "jan", "feb", "mar", ..., "nov", "dec")
-  12 - duration: last contact duration, in seconds (numeric)
+   8 - contact: contact communication type (categorical: "cellular","telephone") 
+   9 - month: last contact month of year (categorical: "jan", "feb", "mar", ..., "nov", "dec")
+  10 - day_of_week: last contact day of the week (categorical: "mon","tue","wed","thu","fri")
+  11 - duration: last contact duration, in seconds (numeric). Important note:  this attribute highly affects the output target (e.g., if duration=0 then y="no"). Yet, the duration is not known before a call is performed. Also, after the end of the call y is obviously known. Thus, this input should only be included for benchmark purposes and should be discarded if the intention is to have a realistic predictive model.
    # other attributes:
-  13 - campaign: number of contacts performed during this campaign and for this client (numeric, includes last contact)
-  14 - pdays: number of days that passed by after the client was last contacted from a previous campaign (numeric, -1 means client was not previously contacted)
-  15 - previous: number of contacts performed before this campaign and for this client (numeric)
-  16 - poutcome: outcome of the previous marketing campaign (categorical: "unknown","other","failure","success")
+  12 - campaign: number of contacts performed during this campaign and for this client (numeric, includes last contact)
+  13 - pdays: number of days that passed by after the client was last contacted from a previous campaign (numeric; 999 means client was not previously contacted)
+  14 - previous: number of contacts performed before this campaign and for this client (numeric)
+  15 - poutcome: outcome of the previous marketing campaign (categorical: "failure","nonexistent","success")
+   # social and economic context attributes
+  16 - emp.var.rate: employment variation rate - quarterly indicator (numeric)
+  17 - cons.price.idx: consumer price index - monthly indicator (numeric)     
+  18 - cons.conf.idx: consumer confidence index - monthly indicator (numeric)     
+  19 - euribor3m: euribor 3 month rate - daily indicator (numeric)
+  20 - nr.employed: number of employees - quarterly indicator (numeric)
 
   Output variable (desired target):
-  17 - y - has the client subscribed a term deposit? (binary: "yes","no")
+  21 - y - has the client subscribed a term deposit? (binary: "yes","no")
 
-8. Missing Attribute Values: None
+8. Missing Attribute Values: There are several missing values in some categorical attributes, all coded with the "unknown" label. These missing values can be treated as a possible class label or using deletion or imputation techniques. 
 
 
 ```{r}
 library(tidyverse)
-bank_full.path <- file.choose()
-bank_full = read.csv(bank_full.path, header = TRUE, sep = ";")
+library(ggplot2)
+library(GGally)
+# bank_full.path <- file.choose()
+# bank_full = read.csv(bank_full.path, header = TRUE, sep = ";")
+bank_full <- read.csv("bank-additional-full.csv", header=TRUE, sep = ';')
+
 head(bank_full)
+colnames(bank_full)
 bank_full
 summary(bank_full)
 ```
 response (y)
 has the client subscribed a term deposit?
-no: 39922
-yes: 5289
+no: 36548
+yes: 4640
 
 ```{r}
 attach(bank_full)
@@ -129,31 +135,173 @@ proportion_plot <- function(predictor) {
   table(y,predictor)
 }
 proportion_plot(balance)
+proportion_plot(duration)
+
+```
+
+
+The data is related with direct marketing campaigns (phone calls) of a Portuguese banking institution. The classification goal is to predict if the client will subscribe a term deposit (variable y).
+
+  The zip file includes two datasets: 
+      1) bank-additional-full.csv with all examples, ordered by date (from May 2008 to November 2010).
+      2) bank-additional.csv with 10% of the examples (4119), randomly selected from bank-additional-full.csv.
+   The smallest dataset is provided to test more computationally demanding machine learning algorithms (e.g., SVM).
+
+   The binary classification goal is to predict if the client will subscribe a bank term deposit (variable y).
+
+5. Number of Instances: 41188 for bank-additional-full.csv
+
+6. Number of Attributes: 20 + output attribute.
+
+7. Attribute information:
+
+   For more information, read [Moro et al., 2014].
+
+   Input variables:
+   # bank client data:
+   1 - age (numeric)
+   
+   2 - job : type of job (categorical: "admin.","blue-collar","entrepreneur","housemaid","management","retired","self-employed","services","student","technician","unemployed","unknown")
+   
+   3 - marital : marital status (categorical: "divorced","married","single","unknown"; note: "divorced" means divorced or widowed)
+   
+   4 - education (categorical: "basic.4y","basic.6y","basic.9y","high.school","illiterate","professional.course","university.degree","unknown")
+   
+   5 - default: has credit in default? (categorical: "no","yes","unknown")
+   6 - housing: has housing loan? (categorical: "no","yes","unknown")
+   7 - loan: has personal loan? (categorical: "no","yes","unknown")
+   
+   # related with the last contact of the current campaign:
+   8 - contact: contact communication type (categorical: "cellular","telephone") 
+   9 - month: last contact month of year (categorical: "jan", "feb", "mar", ..., "nov", "dec")
+  10 - day_of_week: last contact day of the week (categorical: "mon","tue","wed","thu","fri")
+  
+  11 - duration: last contact duration, in seconds (numeric). Important note:  this attribute highly affects the output target (e.g., if duration=0 then y="no"). Yet, the duration is not known before a call is performed. Also, after the end of the call y is obviously known. Thus, this input should only be included for benchmark purposes and should be discarded if the intention is to have a realistic predictive model.
+   # other attributes:
+  12 - campaign: number of contacts performed during this campaign and for this client (numeric, includes last contact)
+  13 - pdays: number of days that passed by after the client was last contacted from a previous campaign (numeric; 999 means client was not previously contacted)
+  14 - previous: number of contacts performed before this campaign and for this client (numeric)
+  15 - poutcome: outcome of the previous marketing campaign (categorical: "failure","nonexistent","success")
+   # social and economic context attributes
+  16 - emp.var.rate: employment variation rate - quarterly indicator (numeric)
+  17 - cons.price.idx: consumer price index - monthly indicator (numeric)     
+  18 - cons.conf.idx: consumer confidence index - monthly indicator (numeric)     
+  19 - euribor3m: euribor 3 month rate - daily indicator (numeric)
+  20 - nr.employed: number of employees - quarterly indicator (numeric)
+
+  Output variable (desired target):
+  21 - y - has the client subscribed a term deposit? (binary: "yes","no")
+
+8. Missing Attribute Values: There are several missing values in some categorical attributes, all coded with the "unknown" label. These missing values can be treated as a possible class label or using deletion or imputation techniques. 
+
+1,11
+```{r}
+colnames(bank_full)
+summary(bank_full)
+
+```
+
+```{r}
+ggplot(data = bank_full, aes(x = age,fill = y)) + geom_histogram()+facet_wrap(~y,
+scales = "free_y")
+ggplot(data = bank_full, aes(x = age,fill = y)) + geom_histogram()+facet_wrap(~y,
+scales = "free_y")
+
+ggplot(data = bank_full, aes(x = duration,fill = y)) + geom_histogram()+facet_wrap(~y,
+scales = "free_y")
+ggplot(data = bank_full, aes(x = duration,fill = y)) + geom_histogram()+facet_wrap(~y,
+scales = "free_y")
+
+ggplot(data = bank_full, aes(x = campaign,fill = y)) + geom_histogram()+facet_wrap(~y,
+scales = "free_y")
+ggplot(data = bank_full, aes(x = emp.var.rate,fill = y)) + geom_histogram()+facet_wrap(~y,
+scales = "free_y")
+ggplot(data = bank_full, aes(x = emp.var.rate)) + geom_histogram()
+t(aggregate(y~age,data=bank_full,summary))
+library(GGally)
+fit = lm()
+ggplot(data = bank_full, aes(x = duration)) + geom_histogram()+facet_grid(~y)
+
+```
+
+
+
+```{r}
+library(ggplot2)
+library(gplots)
+#removed categorical variables to check continuous variables
+newBankAdd <- bank_full[-c(2:10,15)]
+summary(newBankAdd)
+colnames(newBankAdd)
+
+my.cor<-cor(newBankAdd[,1:10])
+my.cor
+heatmap.2(my.cor,col=redgreen(75), 
+          density.info="none", trace="none", dendrogram=c("row"), 
+          symm=F,symkey=T,symbreaks=T, scale="none")
 
 
 ```
-   1 - age (numeric)
-   2 - job : type of job (categorical: "admin.","unknown","unemployed","management","housemaid","entrepreneur","student",
-                                       "blue-collar","self-employed","retired","technician","services") 
-   3 - marital : marital status (categorical: "married","divorced","single"; note: "divorced" means divorced or widowed)
-   4 - education (categorical: "unknown","secondary","primary","tertiary")
-   5 - default: has credit in default? (binary: "yes","no")
-   6 - balance: average yearly balance, in euros (numeric) 
-   7 - housing: has housing loan? (binary: "yes","no")
-   8 - loan: has personal loan? (binary: "yes","no")
-   # related with the last contact of the current campaign:
-   9 - contact: contact communication type (categorical: "unknown","telephone","cellular") 
-  10 - day: last contact day of the month (numeric)
-  11 - month: last contact month of year (categorical: "jan", "feb", "mar", ..., "nov", "dec")
-  12 - duration: last contact duration, in seconds (numeric)
-   # other attributes:
-  13 - campaign: number of contacts performed during this campaign and for this client (numeric, includes last contact)
-  14 - pdays: number of days that passed by after the client was last contacted from a previous campaign (numeric, -1 means client was not previously contacted)
-  15 - previous: number of contacts performed before this campaign and for this client (numeric)
-  16 - poutcome: outcome of the previous marketing campaign (categorical: "unknown","other","failure","success")
 
-  Output variable (desired target):
-  17 - y - has the client subscribed a term deposit? (binary: "yes","no")
+```{r}
+pc.result<-prcomp(newBankAdd[,1:10],scale.=TRUE)
+pc.scores<-pc.result$x
+pc.scores<-data.frame(pc.scores)
+pc.scores$y<-newBankAdd$y
+
+#Use ggplot2 to plot the first few pc's
+ggplot(data = pc.scores, aes(x = PC1, y = PC2)) +
+  geom_point(aes(col=y), size=1)+
+  ggtitle("PCA of Bank Full Additional")
+
+ggplot(data = pc.scores, aes(x = PC2, y = PC3)) +
+  geom_point(aes(col=y), size=1)+
+  ggtitle("PCA of Bank Full Additional")
+
+ggplot(data = pc.scores, aes(x = PC3, y = PC4)) +
+  geom_point(aes(col=y), size=1)+
+  ggtitle("PCA of Bank Full Additional")
+
+ggplot(data = pc.scores, aes(x = PC1, y = PC10)) +
+  geom_point(aes(col=y), size=1)+
+  ggtitle("PCA of Bank Full Additional")
+
+eigenvals<-(pc.result$sdev)^2
+
+#So we can see some pretty good seperation here.
+plot(1:10,eigenvals/sum(eigenvals),type="l",main="Scree Plot PC's",ylab="Prop. Var. Explained",ylim=c(0,1))
+cumulative.prop<-cumsum(eigenvals/sum(eigenvals))
+lines(1:10,cumulative.prop,lty=2)
+
+```
+
+```{r}
+library(tidyverse)
+library(broom)
+library(pROC)
+library(plotROC) 
+library(knitr)
+log.bank <- glm(y ~ ., 
+              data = newBankAdd, family = binomial)
+log.bank
+tidy(log.bank, conf.int = TRUE, exponentiate = FALSE) %>% 
+  kable(format = "markdown", digits = 3)
+```
+
+
+
+```{r}
+library(arm)
+?binnedplot
+
+arm::binnedplot(x=risk_m_int_aug$ageCent,y=risk_m_int_aug$.resid,xlab="Age (Mean-Centered)", main = "Binned Residuals vs. Age", col.int = FALSE)
+```
+
+
+
+
+
+
 ```{r}
 
 newBankFull <- bank_full[-c(2:5,7:9,11,12,15,16:17)]
@@ -171,7 +319,13 @@ lines(1:5,cumulative.prop,lty=2)
 ggplot(data = pc.scores, aes(x = PC1, y = PC2)) +
   geom_point(aes(col=y), size=1)+
   ggtitle("PCA of Bank")
+
+
 ```
+
+
+
+
 
 ```{r}
 library(ROCR)
@@ -196,6 +350,14 @@ library(aplore3)
 ?glow_bonemed
 
 bonemed_fu
+library(arm)
+library(lalonde)
+?lalonde
+?library(arm)
+?arm
+install.packages("arm")
+packages.install
+?binnedplot
 ```
 
 
