@@ -62,7 +62,6 @@ library(GGally)
 # bank_full.path <- file.choose()
 # bank_full = read.csv(bank_full.path, header = TRUE, sep = ";")
 bank_full <- read.csv("bank-additional-full.csv", header=TRUE, sep = ';')
-
 head(bank_full)
 colnames(bank_full)
 bank_full
@@ -75,22 +74,16 @@ yes: 4640
 
 ```{r}
 attach(bank_full)
-prop.table(table(y,duration),2)
 
-plot(y~duration,col=c("red","blue"))
 t(aggregate(y~duration,data=bank_full,summary))
 plot(y~duration,col=c("red","blue"))
 ```
-```{r}
-colnames(bank_full)
-```
 
 ```{r}
-#to get proportions that make sense
+#Proportion Tables
 prop.table(table(y,job),2)
 prop.table(table(y,age),2)
 prop.table(table(y,marital),2)
-prop.table(table(y,balance),2)
 prop.table(table(y,education),2)
 prop.table(table(y,duration),2)
 prop.table(table(y,campaign),2)
@@ -109,7 +102,6 @@ plot(y~job,col=c("red","blue"))
 plot(y~age,col=c("red","blue"))
 plot(y~marital,col=c("red","blue"))
 #Visualize
-plot(y~balance,col=c("red","blue"))
 plot(y~education,col=c("red","blue"))
 plot(y~duration,col=c("red","blue"))
 plot(y~marital,col=c("red","blue"))
@@ -160,22 +152,19 @@ The data is related with direct marketing campaigns (phone calls) of a Portugues
    Input variables:
    # bank client data:
    1 - age (numeric)
-   
-   2 - job : type of job (categorical: "admin.","blue-collar","entrepreneur","housemaid","management","retired","self-employed","services","student","technician","unemployed","unknown")
-   
-   3 - marital : marital status (categorical: "divorced","married","single","unknown"; note: "divorced" means divorced or widowed)
-   
-   4 - education (categorical: "basic.4y","basic.6y","basic.9y","high.school","illiterate","professional.course","university.degree","unknown")
-   
-   5 - default: has credit in default? (categorical: "no","yes","unknown")
+   2 - job : type of job 
+   (categorical: "admin.","blue-collar","entrepreneur","housemaid","management","retired","self-employed","services","student","technician","unemployed","unknown")
+   3 - marital: 
+   marital status (categorical: "divorced","married","single","unknown"; note: "divorced" means divorced or widowed)
+   4 - education 
+   (categorical: "basic.4y","basic.6y","basic.9y","high.school","illiterate","professional.course","university.degree","unknown")
+   5 - default: has credit in default?(categorical: "no","yes","unknown")
    6 - housing: has housing loan? (categorical: "no","yes","unknown")
    7 - loan: has personal loan? (categorical: "no","yes","unknown")
-   
    # related with the last contact of the current campaign:
    8 - contact: contact communication type (categorical: "cellular","telephone") 
    9 - month: last contact month of year (categorical: "jan", "feb", "mar", ..., "nov", "dec")
   10 - day_of_week: last contact day of the week (categorical: "mon","tue","wed","thu","fri")
-  
   11 - duration: last contact duration, in seconds (numeric). Important note:  this attribute highly affects the output target (e.g., if duration=0 then y="no"). Yet, the duration is not known before a call is performed. Also, after the end of the call y is obviously known. Thus, this input should only be included for benchmark purposes and should be discarded if the intention is to have a realistic predictive model.
    # other attributes:
   12 - campaign: number of contacts performed during this campaign and for this client (numeric, includes last contact)
@@ -194,52 +183,51 @@ The data is related with direct marketing campaigns (phone calls) of a Portugues
 
 8. Missing Attribute Values: There are several missing values in some categorical attributes, all coded with the "unknown" label. These missing values can be treated as a possible class label or using deletion or imputation techniques. 
 
-1,11
 ```{r}
-colnames(bank_full)
 summary(bank_full)
-
+colnames(bank_full)
 ```
 
 ```{r}
+#Histograms by Response Variable Y
 ggplot(data = bank_full, aes(x = age,fill = y)) + geom_histogram()+facet_wrap(~y,
 scales = "free_y")
 ggplot(data = bank_full, aes(x = age,fill = y)) + geom_histogram()+facet_wrap(~y,
 scales = "free_y")
-
 ggplot(data = bank_full, aes(x = duration,fill = y)) + geom_histogram()+facet_wrap(~y,
 scales = "free_y")
 ggplot(data = bank_full, aes(x = duration,fill = y)) + geom_histogram()+facet_wrap(~y,
 scales = "free_y")
-
 ggplot(data = bank_full, aes(x = campaign,fill = y)) + geom_histogram()+facet_wrap(~y,
 scales = "free_y")
 ggplot(data = bank_full, aes(x = emp.var.rate,fill = y)) + geom_histogram()+facet_wrap(~y,
 scales = "free_y")
 ggplot(data = bank_full, aes(x = emp.var.rate)) + geom_histogram()
 t(aggregate(y~age,data=bank_full,summary))
+
 library(GGally)
-fit = lm()
 ggplot(data = bank_full, aes(x = duration)) + geom_histogram()+facet_grid(~y)
 
 ```
 
 
-
 ```{r}
 library(ggplot2)
 library(gplots)
-#removed categorical variables to check continuous variables
+#removed categorical variables for PCA and checking multicolinearity
 newBankAdd <- bank_full[-c(2:10,15)]
 summary(newBankAdd)
 colnames(newBankAdd)
 
+#Correlations between continuous variables
 my.cor<-cor(newBankAdd[,1:10])
 my.cor
+#Correlation Heatmap
 heatmap.2(my.cor,col=redgreen(75), 
           density.info="none", trace="none", dendrogram=c("row"), 
           symm=F,symkey=T,symbreaks=T, scale="none")
 
+mr.cor2 = cor(pc.result)
 
 ```
 
@@ -262,6 +250,11 @@ ggplot(data = pc.scores, aes(x = PC3, y = PC4)) +
   geom_point(aes(col=y), size=1)+
   ggtitle("PCA of Bank Full Additional")
 
+ggplot(data = pc.scores, aes(x = PC7, y = PC8)) +
+  geom_point(aes(col=y), size=1)+
+  ggtitle("PCA of Bank Full Additional")
+
+
 ggplot(data = pc.scores, aes(x = PC1, y = PC10)) +
   geom_point(aes(col=y), size=1)+
   ggtitle("PCA of Bank Full Additional")
@@ -273,8 +266,85 @@ plot(1:10,eigenvals/sum(eigenvals),type="l",main="Scree Plot PC's",ylab="Prop. V
 cumulative.prop<-cumsum(eigenvals/sum(eigenvals))
 lines(1:10,cumulative.prop,lty=2)
 
+
 ```
 
+
+```{r}
+#Pairwise Plot -- takes time to run
+#ggpairs(newBankAdd, aes(color = y, alpha = 0.2),lower = list(combo=wrap("facethist",binwidth=0.5)))
+attach(newBankAdd)
+colnames(newBankAdd)
+summary(newBankAdd)
+library(plotly)
+fig <- plot_ly(x = duration, type = "histogram")
+
+fig <- plot_ly(x = newBankAdd$duration , type = "histogram")
+fig <- plot_ly(x = newBankAdd$age, type = "histogram")
+fig
+
+plot(duration~y,col=c("red","blue"))
+plot(previous~y,col=c("red","blue"))
+plot(campaign~y,col=c("red","blue"))
+plot(pdays~y,col=c("red","blue"))
+plot(euribor3m~y,col=c("red","blue"))
+plot(emp.var.rate~y,col=c("red","blue"))
+```
+Duration,Previous, and Campaign are heavily right skewed.
+We will need to transform the variables if choose to keep them.
+Campaign has one very large outlier.
+P-days is heavily left skewed.
+euribor3m is bimodal for yes and no.
+
+```{r}
+bank_full_omit <-na.omit(bank_full)
+o.newBankAdd <-na.omit(newBankAdd)
+model.main<-glm(y ~ ., data=bank_full_omit,family = binomial)
+summary(model.main)
+library(ResourceSelection)
+library(car)
+alias(model.main)
+#Using this tool, GVIF is the same as VIF for continuous predictors only
+#For categorical predictors, the value GVIG^(1/(2*df)) should be squared and interpreted
+#as a usuaul vif type metric.The following code can be used to interpret VIFs like we 
+#discussed in class.
+(vif(model.main))
+par(mfrow = c(2, 2))
+plot(model.main)
+```
+
+```{r}
+t(aggregate(euribor3m~y,data=bank_full,summary))
+t(aggregate(emp.var.rate~y,data=bank_full,summary))
+summary(model.main)
+exp(cbind("Odds ratio" = coef(model.main), confint.default(model.main, level = 0.95)))
+```
+
+Month is a good predictor in the model, statistically significant and 
+```{r}
+t(aggregate(month~y,data=bank_full,summary))
+t(aggregate(marital~y,data=bank_full,summary))
+prop.table(table(y,marital),2)
+
+#looks like there is a higher proportion of no's than yes to some of the types of jobs.
+t(aggregate(job~y,data=bank_full,summary))
+prop.table(table(y,job),2)
+
+t(aggregate(education~y,data=bank_full,summary))
+prop.table(table(y,education),2)
+
+#contact by cellular yield a higher percent of yes compared to telephone
+t(aggregate(contact~y,data=bank_full,summary))
+prop.table(table(y,contact),2)
+
+
+```
+Socioeconomic variables are potentially multicolinear with variables that are recorded over time?
+
+
+
+
+________________________________________________________________________________________________
 ```{r}
 library(tidyverse)
 library(broom)
@@ -287,19 +357,6 @@ log.bank
 tidy(log.bank, conf.int = TRUE, exponentiate = FALSE) %>% 
   kable(format = "markdown", digits = 3)
 ```
-
-
-
-```{r}
-library(arm)
-?binnedplot
-
-arm::binnedplot(x=risk_m_int_aug$ageCent,y=risk_m_int_aug$.resid,xlab="Age (Mean-Centered)", main = "Binned Residuals vs. Age", col.int = FALSE)
-```
-
-
-
-
 
 
 ```{r}
@@ -319,7 +376,6 @@ lines(1:5,cumulative.prop,lty=2)
 ggplot(data = pc.scores, aes(x = PC1, y = PC2)) +
   geom_point(aes(col=y), size=1)+
   ggtitle("PCA of Bank")
-
 
 ```
 
