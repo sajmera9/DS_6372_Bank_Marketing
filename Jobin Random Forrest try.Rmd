@@ -1,0 +1,54 @@
+---
+title: "Random Forrest  Project 2"
+author: "Jobin Joseph"
+date: "8/4/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+library(tidyverse)
+library(ggplot2)
+library(GGally)
+#bank_full.path <- file.choose()
+#hello = read.csv(bank_full.path, header = TRUE, sep = ";")
+bank_full <- read.csv("bank-additional-full.csv", header=TRUE, sep = ';')
+summary(bank_full)
+sapply(bank_full, class)
+
+
+#Convert Columns to Numeric
+#Move previous into other list 
+num.cols <- c("age","duration","campaign","pdays","previous","emp.var.rate","cons.price.idx","cons.conf.idx","euribor3m","nr.employed")
+bank_full[num.cols] <- lapply(bank_full[num.cols], as.numeric)
+sapply(bank_full, class)
+
+#Convert Columns to Factor
+fac.col <- c("job","marital","education","default","housing","loan","contact","month","day_of_week", "poutcome","y")
+bank_full[fac.col] <- lapply(bank_full[fac.col], as.factor)
+sapply(bank_full, class)
+
+set.seed(42)
+
+RFmodel <- randomForest(y ~ age+ duration +campaign +pdays, data=bank_full, proximity=TRUE)
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
