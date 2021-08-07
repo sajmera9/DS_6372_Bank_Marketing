@@ -57,9 +57,11 @@ editor_options:
 library(tidyverse)
 library(ggplot2)
 library(GGally)
+library(ROCR)
 library(MASS)
 library(mvtnorm)
 library(ROSE)
+library(pROC)
 
 bankdata <- read.csv("bank-additional-full.csv", header=TRUE, sep = ';')
 summary(bankdata)
@@ -85,7 +87,7 @@ table(test$y)
 
 
 ```{r EDA of continous variables against response}
-bankcont <- train[c(1,13:14,16:21)]
+bankcont <- train[c(1,11:14,18,21)]
 
 attach(bankcont)
 summary(bankcont)
@@ -116,12 +118,12 @@ plot(y~campaign, col=c("red","blue"))
 
 
 #Previous EDA
-summary(previous)
-ggplot(data=bankcont, aes(x=previous, color=y ))+geom_histogram()
-prop.table(table(y,previous),2)
+#summary(previous)
+#ggplot(data=bankcont, aes(x=previous, color=y ))+geom_histogram()
+#prop.table(table(y,previous),2)
 plot(y~previous, col=c("red","blue"))
 
-ggplot(data=bankcont, aes(x=previous, y=campaign, color=y))+geom_jitter(width=1, size=1)
+#ggplot(data=bankcont, aes(x=previous, y=campaign, color=y))+geom_jitter(width=1, size=1)
 
 #emp.var.rate EDA
 
@@ -129,11 +131,11 @@ summary(emp.var.rate)
 
 plot(y~emp.var.rate, col=c("red","blue"))
 
-summary(cons.price.idx)
+#summary(cons.price.idx)
 
-plot(y~cons.price.idx, col=c("red","blue"))
+#plot(y~cons.price.idx, col=c("red","blue"))
 
-summary(cons.conf.idx)
+#summary(cons.conf.idx)
 
 plot(y~cons.conf.idx, col=c("red","blue"))
 
@@ -145,20 +147,26 @@ summary(nr.employed)
 
 plot(y~nr.employed, col=c("red","blue"))
 
+ggplot(data=bankcont, aes(x=pdays,y=previous)) +geom_point(aes(col=y), size=1)+ggtitle("Scatterplots for predictor separation checks")
+ggplot(data=bankcont, aes(x=age,y=previous)) +geom_point(aes(col=y), size=1)+ggtitle("Scatterplots for predictor separation checks")
+ggplot(data=bankcont, aes(x=age,y=emp.var.rate)) +geom_point(aes(col=y), size=1)+ggtitle("Scatterplot for predictor separation checks")
+ggplot(data=bankcont, aes(x=cons.conf.idx,y=cons.price.idx)) +geom_point(aes(col=y), size=1)+ggtitle("Scatterplot for predictor separation checks")
+ggplot(data=bankcont, aes(x=nr.employed,y=emp.var.rate)) +geom_point(aes(col=y), size=1)+ggtitle("Scatterplot for predictor separation checks")
+ggplot(data=bankcont, aes(x=euribor3m,y=cons.conf.idx)) +geom_point(aes(col=y), size=1)+ggtitle("Scatterplot for predictor separation checks")
 
 
+bankconttest <- test[c(1,13:14,16:21)]
 ```
 
 
-```{r Conduct PCA in prep of LDA}
+```{r Conduct PCA Check}
 
-data <- bankcont[-9]
+cont_final <- train[c(1,13:14,16:20)]
 
-
-pc.result<-prcomp(data,scale.=TRUE)
+pc.result<-prcomp(cont_final,scale.=TRUE)
 pc.scores<-pc.result$x
 pc.scores<-data.frame(pc.scores)
-pc.scores$y<-bankcont$y
+pc.scores$y<-train$y
 
 
 #Loadings for interpretation
@@ -172,6 +180,7 @@ plot(1:8,pc.prop,type="l",main="Scree Plot", ylim=c(0,1),xlab="PC #",ylab="Propo
 lines(1:8,pc.cumprop,lty=3)
 
 
+
 ggplot(data=pc.scores, aes(x=PC1,y=PC2)) +geom_point(aes(col=y), size=1)+ggtitle("PCA of Opening account")
 ggplot(data=pc.scores, aes(x=PC1,y=PC3)) +geom_point(aes(col=y), size=1)+ggtitle("PCA of Opening account")
 ggplot(data=pc.scores, aes(x=PC1,y=PC4)) +geom_point(aes(col=y), size=1)+ggtitle("PCA of Opening account")
@@ -180,12 +189,81 @@ ggplot(data=pc.scores, aes(x=PC2,y=PC4)) +geom_point(aes(col=y), size=1)+ggtitle
 ggplot(data=pc.scores, aes(x=PC3,y=PC4)) +geom_point(aes(col=y), size=1)+ggtitle("PCA of Opening account")
 ```
 
+```{r LDA}
+#Running initial lda
+mylda <- lda(y ~ emp.var.rate+pdays+previous+age+cons.conf.idx, data = bankcont)
+pred<- predict(mylda,newdata=bankconttest)$class
+
+x<-table(pred,pc.test$y)
+x
+
+#Misclassification Error
+n<- dim(pc.test)
+ME<- (x[2,1]+x[1,2])/n[1]
+ME
+
+#Overall Accuracy
+1-ME
+
+#ROC version1
+ldaprd<-predict(mylda,newdate=bankcont)$posterior
+ldaprd<-ldaprd[,2]
+pred <- prediction(ldaprd, bankcont$y)
+roc.perf = performance(pred, measure = "tpr", x.measure = "fpr")
+auc.train <- performance(pred, measure = "auc")
+auc.train <- auc.train@y.values
+plot(roc.perf,main="LDA")
+abline(a=0, b= 1) #Ref line indicating poor performance
+text(x = .40, y = .6,paste("AUC = ", round(auc.train[[1]],3), sep = ""))
+
+confusionMatrix(x)
+```
+
+
+
+```
+
+
+
+
 ```{r Perform LDA}
+#Setting up test set
+bankconttest <- test[c(1,13:14,16:20)]
+pc.tset<-prcomp(bankconttest,scale.=TRUE)
+pc.test<-pc.tset$x
+pc.test<-data.frame(pc.test)
+pc.test$y<-test$y
+
+#calculate Prior
+prop.table(table(bank_balance$y))
+
+
+#Running initial lda
 mylda <- lda(y ~ PC1+PC2+PC3+PC4, data = pc.scores)
 pred<- predict(mylda,newdata=pc.test)$class
 
-Truth <-pc.test$y
-x<-table(pred,Truth)
+x<-table(pred,pc.test$y)
 x
+
+#Misclassification Error
+n<- dim(pc.test)
+ME<- (x[2,1]+x[1,2])/n[1]
+ME
+
+#Overall Accuracy
+1-ME
+
+#ROC version1
+ldaprd<-predict(mylda,newdate=pc.scores)$posterior
+ldaprd<-ldaprd[,2]
+pred <- prediction(ldaprd, pc.scores$y)
+roc.perf = performance(pred, measure = "tpr", x.measure = "fpr")
+auc.train <- performance(pred, measure = "auc")
+auc.train <- auc.train@y.values
+plot(roc.perf,main="LDA")
+abline(a=0, b= 1) #Ref line indicating poor performance
+text(x = .40, y = .6,paste("AUC = ", round(auc.train[[1]],3), sep = ""))
+
+confusionMatrix(x)
 
 ```
