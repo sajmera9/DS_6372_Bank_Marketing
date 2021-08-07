@@ -87,7 +87,7 @@ table(test$y)
 
 
 ```{r EDA of continous variables against response}
-bankcont <- train[c(1,11:14,18,21)]
+bankcont <- train[c(1,11:14,16:21)]
 
 attach(bankcont)
 summary(bankcont)
@@ -118,24 +118,23 @@ plot(y~campaign, col=c("red","blue"))
 
 
 #Previous EDA
-#summary(previous)
-#ggplot(data=bankcont, aes(x=previous, color=y ))+geom_histogram()
-#prop.table(table(y,previous),2)
+summary(previous)
+ggplot(data=bankcont, aes(x=previous, color=y ))+geom_histogram()
+prop.table(table(y,previous),2)
 plot(y~previous, col=c("red","blue"))
 
-#ggplot(data=bankcont, aes(x=previous, y=campaign, color=y))+geom_jitter(width=1, size=1)
+ggplot(data=bankcont, aes(x=previous, y=campaign, color=y))+geom_jitter(width=1, size=1)
 
-#emp.var.rate EDA
-
+#Socio-economic indicator EDA
 summary(emp.var.rate)
 
 plot(y~emp.var.rate, col=c("red","blue"))
 
-#summary(cons.price.idx)
+summary(cons.price.idx)
 
-#plot(y~cons.price.idx, col=c("red","blue"))
+plot(y~cons.price.idx, col=c("red","blue"))
 
-#summary(cons.conf.idx)
+summary(cons.conf.idx)
 
 plot(y~cons.conf.idx, col=c("red","blue"))
 
