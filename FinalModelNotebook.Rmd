@@ -43,10 +43,10 @@ test = multicol.banksample[-trainIndices,]
 library(car)
 library(glmnet)
 set.seed(1234)
-
+simple.bankdata = bank_full[-c(16,17,19,20)]
 fitControl <- trainControl(method = "cv",number = 5)
 simple.lasso <- train(y ~.,
-                  data=multicol.bank, method = "glmnet", 
+                  data=simple.bankdata, method = "glmnet", 
                   trControl = fitControl,
                   tuneGrid=expand.grid(
                     .alpha=1,
@@ -59,9 +59,17 @@ coef(simple.lasso$finalModel,simple.lasso$finalModel$lambdaOpt)
 varImp(simple.lasso)
 simple.lasso$results
 ```
- [1] "age"           "job"           "marital"       "education"     "default"       "housing"       "loan"         
- [8] "contact"       "month"         "day_of_week"   "duration"      "campaign"      "pdays"         "previous"     
-[15] "poutcome"      "cons.conf.idx" "y" 
+age,job, marital, education, default, contact, month, dayofweek, duration, campaign, pdays, previous, and cons.conf.idx kept in the model
+
+housing, and loan removed
+Fitting the model with
+```{r}
+names(simple.bankdata)
+simple.finaldata = simple.bankdata[-c(6,7)]
+simplefinalmodel = glm(y~.,data = simple.finaldata, family = binomial)
+summary(simplefinalmodel)
+```
+
 
 Complex Model
 ```{r}
