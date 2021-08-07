@@ -59,9 +59,19 @@ The data is related with direct marketing campaigns (phone calls) of a Portugues
 library(tidyverse)
 library(ggplot2)
 library(GGally)
-# bank_full.path <- file.choose()
-# bank_full = read.csv(bank_full.path, header = TRUE, sep = ";")
-bank_full <- read.csv("bank-additional-full.csv", header=TRUE, sep = ';')
+bank_full.path <- file.choose()
+hello = read.csv(bank_full.path, header = TRUE, sep = ";")
+bank_full <- read.csv("bank-additional-full.csv", header=TRUE, sep = ';',stringsAsFactors = F)
+conv_bank = read.csv("bank-additional-full.csv", header=TRUE, sep = ';',stringsAsFactors = F)
+#Convert Columns to Factor
+check = names(conv_bank)
+conv_bank[check] <- lapply(conv_bank[check], factor)
+sapply(conv_bank, class)
+num.cols <- c("age","duration","campaign","pdays","previous","emp.var.rate","cons.price.idx","cons.conf.idx","euribor3m","nr.employed")
+conv_bank[num.cols] <- lapply(conv_bank[num.cols], as.numeric)
+sapply(conv_bank, class)
+
+
 head(bank_full)
 colnames(bank_full)
 bank_full
@@ -216,6 +226,8 @@ library(ggplot2)
 library(gplots)
 #removed categorical variables for PCA and checking multicolinearity
 newBankAdd <- bank_full[-c(2:10,15)]
+
+View(newBankAdd)
 summary(newBankAdd)
 colnames(newBankAdd)
 
@@ -231,43 +243,82 @@ mr.cor2 = cor(pc.result)
 
 ```
 
+
 ```{r}
-pc.result<-prcomp(newBankAdd[,1:10],scale.=TRUE)
+cat.newBankAdd <- bank_full[-c(2:10,15)]
+colnames(newBankAdd)
+cols <- c("age","duration","campaign","pdays","previous","emp.var.rate","cons.price.idx","cons.conf.idx","euribor3m","nr.employed")
+cat.newBankAdd[cols] <- lapply(cat.newBankAdd[cols], factor)
+sapply(cat.newBankAdd, class)
+#distribution of continuous variables
+#Previous is problematic because it should be a categorized as a categorical variable. it has 11 levels.
+
+summary(cat.newBankAdd)
+
+t(aggregate(euribor3m~y,data=bank_full,summary))
+t(aggregate(emp.var.rate~y,data=bank_full,summary))
+
+```
+
+
+
+
+
+```{r}
+#Removed Previous because it is a categorical variable and the seperation looks significantly better.
+#Now we only need 4 PCs to explain 80% of the variance.
+newBankAdd <- bank_full[-c(2:10,15)]
+newBankAdd <- newBankAdd[-c(5)]
+ggpairs(newBankAdd, aes(colour = y, alpha = 0.2), lower=list(combo=wrap("facethist",  
+binwidth=0.5)))
+head(newBankAdd)
+newBankAdd.test3 <- newBankAdd[-c(3,6)]
+pc.result<-prcomp(newBankAdd[,1:9],scale.=TRUE)
 pc.scores<-pc.result$x
 pc.scores<-data.frame(pc.scores)
 pc.scores$y<-newBankAdd$y
-
+# test=cor(pc.result$x)
+# cor(pc.result$rotation)
+# table = pc.result$rotation
 #Use ggplot2 to plot the first few pc's
 ggplot(data = pc.scores, aes(x = PC1, y = PC2)) +
-  geom_point(aes(col=y), size=1)+
+  geom_point(aes(col=y), size=.5)+
   ggtitle("PCA of Bank Full Additional")
 
 ggplot(data = pc.scores, aes(x = PC2, y = PC3)) +
-  geom_point(aes(col=y), size=1)+
+  geom_point(aes(col=y), size=.5)+
   ggtitle("PCA of Bank Full Additional")
 
 ggplot(data = pc.scores, aes(x = PC3, y = PC4)) +
-  geom_point(aes(col=y), size=1)+
+  geom_point(aes(col=y), size=.5)+
   ggtitle("PCA of Bank Full Additional")
 
-ggplot(data = pc.scores, aes(x = PC7, y = PC8)) +
-  geom_point(aes(col=y), size=1)+
+ggplot(data = pc.scores, aes(x = PC4, y = PC5)) +
+  geom_point(aes(col=y), size=.5)+
   ggtitle("PCA of Bank Full Additional")
 
-
-ggplot(data = pc.scores, aes(x = PC1, y = PC10)) +
-  geom_point(aes(col=y), size=1)+
+ggplot(data = pc.scores, aes(x = PC1, y = PC9)) +
+  geom_point(aes(col=y), size=.5)+
   ggtitle("PCA of Bank Full Additional")
-
+#Scree Plot
 eigenvals<-(pc.result$sdev)^2
-
-#So we can see some pretty good seperation here.
-plot(1:10,eigenvals/sum(eigenvals),type="l",main="Scree Plot PC's",ylab="Prop. Var. Explained",ylim=c(0,1))
+plot(1:9,eigenvals/sum(eigenvals),type="l",main="Scree Plot PC's",ylab="Prop. Var. Explained",ylim=c(0,1))
 cumulative.prop<-cumsum(eigenvals/sum(eigenvals))
-lines(1:10,cumulative.prop,lty=2)
-
-
+lines(1:9,cumulative.prop,lty=2)
+plot(pc.scores[,3], pc.scores[,4])
+plot(pc.scores)
+library(GGally)
+ggpairs(pc.result$x[,2:5])
 ```
+
+```{r}
+library(ggplot2)
+#Predictors that have large negative values push samples left
+#Predictors with large positive values push samples right
+loading_scores <- pc.result$rotation[,4]
+```
+
+
 
 
 ```{r}
@@ -299,7 +350,7 @@ euribor3m is bimodal for yes and no.
 ```{r}
 bank_full_omit <-na.omit(bank_full)
 o.newBankAdd <-na.omit(newBankAdd)
-model.main<-glm(y ~ ., data=bank_full_omit,family = binomial)
+model.main<-glm(y ~ ., data=o.newBankAdd,family = binomial)
 summary(model.main)
 library(ResourceSelection)
 library(car)
