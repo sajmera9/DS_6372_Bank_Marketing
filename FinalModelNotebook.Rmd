@@ -2,7 +2,7 @@
 title: "Final Model"
 output: html_notebook
 editor_options: 
-  chunk_output_type: console
+  chunk_output_type: inline
 ---
 
 ```{r}
@@ -88,6 +88,135 @@ train = bank_balance[trainIndices,]
 test = bank_balance[-trainIndices,]
 ```
 
+```{r LDA Continous Variable EDA}
+
+bankcont <- train[c(1,12:13,16:21)]
+
+attach(bankcont)
+summary(bankcont)
+str(bankcont)
+
+pairwise <- ggpairs(bankcont, mapping=ggplot2::aes(colour=y), lower=list(continuous=wrap("points", size=.5)), progress=FALSE)
+
+#pairwise
+#Age EDA
+summary(age)
+ggplot(data=bankcont, aes(x=age, color=y ))+geom_histogram()
+prop.table(table(y,age),2)
 
 
+#pdays EDA
+prop.table(table(y,pdays),2)
+plot(y~pdays, col=c("red","blue"))
+bankcont$priorcontact <- factor(ifelse(bankcont$pdays<median(bankcont$pdays),1, 0))
+attach(bankcont)
+prop.table(table(y,priorcontact),2)
+plot(y~priorcontact, col=c("red","blue"))
+
+#Campaign EDA
+ggplot(data=bankcont, aes(x=campaign))+geom_boxplot(aes(col=y))
+summary(campaign)
+prop.table(table(y, campaign),2)
+plot(y~campaign, col=c("red","blue"))
+
+
+#Previous EDA
+summary(previous)
+prop.table(table(y,previous),2)
+plot(y~previous, col=c("red","blue"))
+
+ggplot(data=bankcont, aes(x=previous, y=campaign, color=y))+geom_jitter(width=1, size=1)
+
+#Socio-economic indicator EDA
+summary(emp.var.rate)
+
+plot(y~emp.var.rate, col=c("red","blue"))
+
+summary(cons.price.idx)
+
+plot(y~cons.price.idx, col=c("red","blue"))
+
+summary(cons.conf.idx)
+
+plot(y~cons.conf.idx, col=c("red","blue"))
+
+summary(euribor3m)
+
+plot(y~euribor3m, col=c("red","blue"))
+
+summary(nr.employed)
+
+plot(y~nr.employed, col=c("red","blue"))
+
+eggplot(data=bankcont, aes(x=pdays,y=previous)) +geom_point(aes(col=y), size=1)+ggtitle("Scatterplots for predictor separation checks")
+ggplot(data=bankcont, aes(x=age,y=pdays)) +geom_point(aes(col=y), size=1)+ggtitle("Scatterplots for predictor separation checks")
+ggplot(data=bankcont, aes(x=cons.conf.idx,y=emp.var.rate)) +geom_point(aes(col=y), size=1)+ggtitle("Scatterplot for predictor separation checks")
+ggplot(data=bankcont, aes(x=cons.conf.idx,y=pdays)) +geom_point(aes(col=y), size=1)+ggtitle("Scatterplot for predictor separation checks")
+ggplot(data=bankcont, aes(x=age,y=emp.var.rate)) +geom_point(aes(col=y), size=1)+ggtitle("Scatterplot for predictor separation checks")
+ggplot(data=bankcont, aes(x=pdays,y=cons.conf.idx)) +geom_point(aes(col=y), size=1)+ggtitle("Scatterplot for predictor separation checks")
+
+
+bankconttest <- test[c(1,12:13,16:21)]
+
+```
+
+```{r Conduct PCA Check}
+
+cont_final <- train[c(1,13,16:20)]
+
+pc.result<-prcomp(cont_final,scale.=TRUE)
+pc.scores<-pc.result$x
+pc.scores<-data.frame(pc.scores)
+pc.scores$y<-train$y
+
+
+#Loadings for interpretation
+pc.result$rotation
+
+#Scree plot
+pc.eigen<-(pc.result$sdev)^2
+pc.prop<-pc.eigen/sum(pc.eigen)
+pc.cumprop<-cumsum(pc.prop)
+plot(1:7,pc.prop,type="l",main="Scree Plot", ylim=c(0,1),xlab="PC #",ylab="Proportion of Variation")
+lines(1:7,pc.cumprop,lty=3)
+
+
+
+ggplot(data=pc.scores, aes(x=PC1,y=PC2)) +geom_point(aes(col=y), size=1)+ggtitle("PCA of Opening account")
+ggplot(data=pc.scores, aes(x=PC1,y=PC3)) +geom_point(aes(col=y), size=1)+ggtitle("PCA of Opening account")
+ggplot(data=pc.scores, aes(x=PC1,y=PC4)) +geom_point(aes(col=y), size=1)+ggtitle("PCA of Opening account")
+ggplot(data=pc.scores, aes(x=PC2,y=PC3)) +geom_point(aes(col=y), size=1)+ggtitle("PCA of Opening account")
+ggplot(data=pc.scores, aes(x=PC2,y=PC4)) +geom_point(aes(col=y), size=1)+ggtitle("PCA of Opening account")
+ggplot(data=pc.scores, aes(x=PC3,y=PC4)) +geom_point(aes(col=y), size=1)+ggtitle("PCA of Opening account")
+```
+
+```{r LDA}
+#Running initial lda
+mylda <- lda(y ~ emp.var.rate+pdays+age+cons.conf.idx, data = bankcont)
+pred<- predict(mylda,newdata=bankconttest)$class
+
+x<-table(pred,pc.test$y)
+x
+
+#Misclassification Error
+n<- dim(pc.test)
+ME<- (x[2,1]+x[1,2])/n[1]
+ME
+
+#Overall Accuracy
+1-ME
+
+#ROC version1
+ldaprd<-predict(mylda,newdate=bankcont)$posterior
+ldaprd<-ldaprd[,2]
+pred <- prediction(ldaprd, bankcont$y)
+roc.perf = performance(pred, measure = "tpr", x.measure = "fpr")
+auc.train <- performance(pred, measure = "auc")
+auc.train <- auc.train@y.values
+plot(roc.perf,main="LDA")
+abline(a=0, b= 1) #Ref line indicating poor performance
+text(x = .40, y = .6,paste("AUC = ", round(auc.train[[1]],3), sep = ""))
+
+confusionMatrix(x)
+```
 
