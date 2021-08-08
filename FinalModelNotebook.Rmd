@@ -91,11 +91,10 @@ confusionMatrix(probsTest, test$y)
 # confusionMatrix(pred, test$y)
 ```
 
-Complex Model
+Complex Model - Lasso
 ```{r}
-
 fitControl <- trainControl(method = "cv",number = 5)
-simple.lasso.pred <- train(y ~.*.,
+complex.lasso.pred <- train(y ~.*.,
                   data=train, method = "glmnet", 
                   trControl = fitControl,
                   tuneGrid=expand.grid(
@@ -103,8 +102,11 @@ simple.lasso.pred <- train(y ~.*.,
                     .lambda=10^seq(-5, 5, length =15)),
                   family="binomial", preProcess = c("center", "scale"))
 
-probsTest <- predict(simple.lasso.pred, test, type = "raw")
-confusionMatrix(probsTest, test$y)
+complex.lasso.pred$finalModel$tuneValue
+
+complex.probsTest <- predict(complex.lasso.pred, test, type = "raw")
+confusionMatrix(complex.probsTest, test$y)
+varImp(complex.lasso.pred)
 ```
 
 
