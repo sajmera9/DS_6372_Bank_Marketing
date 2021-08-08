@@ -17,14 +17,11 @@ When you click the **Knit** button a document will be generated that includes bo
 
 ```{r cars}
 library(tidyverse)
-library(ggplot2)
-library(GGally)
-#bank_full.path <- file.choose()
-#hello = read.csv(bank_full.path, header = TRUE, sep = ";")
+library(caret)
+library(ROSE)
 bank_full <- read.csv("bank-additional-full.csv", header=TRUE, sep = ';')
 summary(bank_full)
 sapply(bank_full, class)
-
 
 #Convert Columns to Numeric
 #Move previous into other list 
@@ -33,13 +30,42 @@ bank_full[num.cols] <- lapply(bank_full[num.cols], as.numeric)
 sapply(bank_full, class)
 
 #Convert Columns to Factor
-fac.col <- c("job","marital","education","default","housing","loan","contact","month","day_of_week", "poutcome","y")
+#Note: Converted previous to factor
+fac.col <- c("job","marital","education","default","housing","loan","contact","month","day_of_week", "poutcome","y","previous")
 bank_full[fac.col] <- lapply(bank_full[fac.col], as.factor)
 sapply(bank_full, class)
+```
 
-set.seed(42)
+```{r}
+#Train/Test set split
+multicol.bank = bank_full[-c(16,17,19,20)]
+multicol.banksample <- ovun.sample(y~., data=multicol.bank, method="under",seed= 1234)$data
+table(multicol.banksample$y)
 
-RFmodel <- randomForest(y ~ age+ duration +campaign +pdays, data=bank_full, proximity=TRUE)
+set.seed(1234)
+splitPerc = .85
+trainIndices = sample(1:dim(multicol.banksample)[1], round(splitPerc * dim(multicol.banksample)[1]))
+trainbank = multicol.banksample[trainIndices,]
+testbank = multicol.banksample[-trainIndices,]
+
+
+
+
+RFmodel <- randomForest(y ~ ., data=trainbank, proximity=TRUE)
+RFmodel
+
+ library(caret)
+#Confusion Matrix with training data set 
+p1<- predict(RFmodel,trainbank)
+confusionMatrix(p1,trainbank$y)
+#confusion matrix with  test data set 
+p2<-predict(RFmodel,testbank)
+confusionMatrix(p2,testbank$y)
+
+
+
+# RFmodel3 <- randomForest(y ~ ., data=bank_full, proximity=TRUE)
+# RFmodel3 
 
 ```
 
