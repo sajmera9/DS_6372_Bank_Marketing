@@ -44,14 +44,11 @@ library(car)
 library(glmnet)
 set.seed(1234)
 simple.bankdata = bank_full[-c(16,17,19,20)]
-fitControl <- trainControl(method = "cv",number = 5)
+fitControl <- trainControl(method = "cv",number = 10)
 simple.lasso <- train(y ~.,
                   data=simple.bankdata, method = "glmnet", 
                   trControl = fitControl,
-                  tuneGrid=expand.grid(
-                    .alpha=1,
-                    .lambda=10^seq(-5, 5, length =15)),
-                  family="binomial", preProcess = c("center", "scale"))
+                  tuneGrid=expand.grid(alpha=1, lambda=10^seq(-5, 5, length = 50)), family="binomial", preProcess = c("center", "scale"))
 
 simple.lasso$bestTune
 simple.lasso$finalModel$tuneValue
@@ -60,16 +57,39 @@ varImp(simple.lasso)
 simple.lasso$results
 ```
 age,job, marital, education, default, contact, month, dayofweek, duration, campaign, pdays, previous, and cons.conf.idx kept in the model
-
 housing, and loan removed
-Fitting the model with
+
+Fitting the model with housing, and loan removed
 ```{r}
 names(simple.bankdata)
 simple.finaldata = simple.bankdata[-c(6,7)]
 simplefinalmodel = glm(y~.,data = simple.finaldata, family = binomial)
 summary(simplefinalmodel)
+plot(simplefinalmodel)
 ```
 
+Simple Model - Getting Metrics with the undersampled data
+```{r}
+library(car)
+library(glmnet)
+set.seed(1234)
+fitControl <- trainControl(method = "cv",number = 5)
+simple.lasso.pred <- train(y ~.,
+                  data=train, method = "glmnet", 
+                  trControl = fitControl,
+                  tuneGrid=expand.grid(
+                    .alpha=1,
+                    .lambda=10^seq(-5, 5, length =15)),
+                  family="binomial", preProcess = c("center", "scale"))
+
+probsTest <- predict(simple.lasso.pred, test, type = "raw")
+confusionMatrix(probsTest, test$y)
+
+# threshold <- 0.5
+# pred      <- factor( ifelse(probsTest[, "yes"] > threshold, "yes", "no") )
+# pred      <- relevel(pred, "yes")   # you may or may not need this; I did
+# confusionMatrix(pred, test$y)
+```
 
 Complex Model
 ```{r}
