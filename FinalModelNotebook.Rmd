@@ -84,7 +84,7 @@ simple.lasso.pred <- train(y ~.,
 
 probsTest <- predict(simple.lasso.pred, test, type = "raw")
 confusionMatrix(probsTest, test$y)
-
+x<-table(pred,pc.test$y)
 # threshold <- 0.5
 # pred      <- factor( ifelse(probsTest[, "yes"] > threshold, "yes", "no") )
 # pred      <- relevel(pred, "yes")   # you may or may not need this; I did
@@ -107,6 +107,7 @@ complex.lasso.pred$finalModel$tuneValue
 complex.probsTest <- predict(complex.lasso.pred, test, type = "raw")
 confusionMatrix(complex.probsTest, test$y)
 varImp(complex.lasso.pred)
+
 ```
 
 
