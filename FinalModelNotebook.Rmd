@@ -70,25 +70,38 @@ plot(simplefinalmodel)
 
 Simple Model - Getting Metrics with the undersampled data
 ```{r}
-library(car)
+library(caret)
 library(glmnet)
 set.seed(1234)
-fitControl <- trainControl(method = "cv",number = 5)
+fitControl <- trainControl(method = "cv",number = 5,classProbs=T,summaryFunction = twoClassSummary)
 simple.lasso.pred <- train(y ~.,
                   data=train, method = "glmnet", 
                   trControl = fitControl,
                   tuneGrid=expand.grid(
                     .alpha=1,
                     .lambda=10^seq(-5, 5, length =15)),
-                  family="binomial", preProcess = c("center", "scale"))
+                  family="binomial", preProcess = c("center", "scale"), metric = "ROC")
+library(ROCR)
+library(pROC)
+log.pred.probs<-predict(simple.lasso.pred,test,type="prob")
+head(log.pred.probs)
+threshold=.5
+log.predclass<-ifelse(simple.lasso.pred$y>threshold,"No","Yes")
+log.predclass<-factor(log.predclass)
+# confusionMatrix(log.predclass,test$y)
+#Get the ROC
+log.roc<-roc(response=test$y,predictor=log.pred.probs$y)
+plot(log.roc,print.thres="best")
+auc(log.roc)
 
 probsTest <- predict(simple.lasso.pred, test, type = "raw")
 confusionMatrix(probsTest, test$y)
-x<-table(pred,pc.test$y)
-# threshold <- 0.5
-# pred      <- factor( ifelse(probsTest[, "yes"] > threshold, "yes", "no") )
-# pred      <- relevel(pred, "yes")   # you may or may not need this; I did
-# confusionMatrix(pred, test$y)
+
+
+
+
+
+
 ```
 
 Complex Model - Lasso
