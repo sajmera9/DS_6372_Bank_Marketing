@@ -81,6 +81,8 @@ simple.lasso.pred <- train(y ~.,
                     .alpha=1,
                     .lambda=10^seq(-5, 5, length =15)),
                   family="binomial", preProcess = c("center", "scale"), metric = "ROC")
+
+coef(simple.lasso.pred$finalModel,simple.lasso.pred$finalModel$lambdaOpt)
 library(ROCR)
 library(pROC)
 log.pred.probs<-predict(simple.lasso.pred,test,type="prob")
@@ -93,7 +95,6 @@ log.predclass<-factor(log.predclass)
 log.roc<-roc(response=test$y,predictor=log.pred.probs$y)
 plot(log.roc,print.thres="best", main= "Simple Logistic Regression Model For ROC Curve")
 auc(log.roc)
-
 probsTest <- predict(simple.lasso.pred, test, type = "raw")
 confusionMatrix(probsTest, test$y)
 
@@ -110,7 +111,7 @@ complex.lasso.pred <- train(y ~.*.,
                     .lambda=10^seq(-5, 5, length =15)),
                   family="binomial", preProcess = c("center", "scale"),metric = "ROC")
 
-complex.lasso.pred$finalModel$lambdaOpt
+coef(complex.lasso.pred$finalModel,complex.lasso.pred$finalModel$lambdaOpt)
 
 threshold=.5
 log.predclass2<-ifelse(complex.lasso.pred$y>threshold,"No","Yes")
