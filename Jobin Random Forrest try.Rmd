@@ -62,10 +62,20 @@ confusionMatrix(p1,trainbank$y)
 p2<-predict(RFmodel,testbank)
 confusionMatrix(p2,testbank$y)
 
+#ROC Plot
 
+library(ROCR)
+library
+pred <- predict(RFmodel, testbank, type = "prob")
+pred <- prediction(pred[,2], testbank$y)
 
-# RFmodel3 <- randomForest(y ~ ., data=bank_full, proximity=TRUE)
-# RFmodel3 
+roc <- performance(pred,"tpr","fpr")
+auc.train <- performance(pred, measure = "auc")
+auc.train <- auc.train@y.values
+plot(roc,main="ROC of Test set RF ")
+abline(a=0, b= 1)
+text(x = .40, y = .6,paste("AUC = ", round(auc.train[[1]],3), sep = ""))
+
 
 ```
 
