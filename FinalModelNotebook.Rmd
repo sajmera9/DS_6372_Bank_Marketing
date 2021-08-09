@@ -97,25 +97,32 @@ auc(log.roc)
 probsTest <- predict(simple.lasso.pred, test, type = "raw")
 confusionMatrix(probsTest, test$y)
 
-
-
-
-
-
 ```
 
 Complex Model - Lasso
 ```{r}
-fitControl <- trainControl(method = "cv",number = 5)
+fitControl <- trainControl(method = "cv",number = 5,classProbs = T,summaryFunction = twoClassSummary)
 complex.lasso.pred <- train(y ~.*.,
                   data=train, method = "glmnet", 
                   trControl = fitControl,
                   tuneGrid=expand.grid(
                     .alpha=1,
                     .lambda=10^seq(-5, 5, length =15)),
-                  family="binomial", preProcess = c("center", "scale"))
+                  family="binomial", preProcess = c("center", "scale"),metric = "ROC")
 
-complex.lasso.pred$finalModel$tuneValue
+complex.lasso.pred$finalModel$lambdaOpt
+
+threshold=.5
+log.predclass2<-ifelse(complex.lasso.pred$y>threshold,"No","Yes")
+log.predclass2<-factor(log.predclass2)
+
+complex.probsTest <- predict(complex.lasso.pred, test, type = "prob")
+
+pred2 = prediction(predictions = complex.probsTest$no,labels = test$y)
+log.roc2 <- roc(response=test$y,predictor=complex.probsTest$y)
+
+plot(log.roc2,print.thres="best")
+auc(log.roc2)
 
 complex.probsTest <- predict(complex.lasso.pred, test, type = "raw")
 confusionMatrix(complex.probsTest, test$y)
