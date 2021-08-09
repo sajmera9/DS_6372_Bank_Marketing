@@ -91,7 +91,7 @@ log.predclass<-factor(log.predclass)
 # confusionMatrix(log.predclass,test$y)
 #Get the ROC
 log.roc<-roc(response=test$y,predictor=log.pred.probs$y)
-plot(log.roc,print.thres="best")
+plot(log.roc,print.thres="best", main= "Simple Logistic Regression Model For ROC Curve")
 auc(log.roc)
 
 probsTest <- predict(simple.lasso.pred, test, type = "raw")
@@ -121,7 +121,7 @@ complex.probsTest <- predict(complex.lasso.pred, test, type = "prob")
 pred2 = prediction(predictions = complex.probsTest$no,labels = test$y)
 log.roc2 <- roc(response=test$y,predictor=complex.probsTest$y)
 
-plot(log.roc2,print.thres="best")
+plot(log.roc2,print.thres="best", main = "ROC for Complex Logistic Regression Model")
 auc(log.roc2)
 
 complex.probsTest <- predict(complex.lasso.pred, test, type = "raw")
