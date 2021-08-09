@@ -368,15 +368,37 @@ Simple Model - Getting Metrics with the undersampled data
 &lt;!-- rnb-chunk-begin --&gt;
 
 
-&lt;!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY29uZnVzaW9uTWF0cml4KHByb2JzVGVzdCwgdGVzdCR5KVxuXG5gYGAifQ== --&gt;
+&lt;!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShjYXJldClcbmxpYnJhcnkoZ2xtbmV0KVxuc2V0LnNlZWQoMTIzNClcbmZpdENvbnRyb2wgPC0gdHJhaW5Db250cm9sKG1ldGhvZCA9IFwiY3ZcIixudW1iZXIgPSA1LGNsYXNzUHJvYnM9VCxzdW1tYXJ5RnVuY3Rpb24gPSB0d29DbGFzc1N1bW1hcnkpXG5zaW1wbGUubGFzc28ucHJlZCA8LSB0cmFpbih5IH4uLFxuICAgICAgICAgICAgICAgICAgZGF0YT10cmFpbiwgbWV0aG9kID0gXCJnbG1uZXRcIiwgXG4gICAgICAgICAgICAgICAgICB0ckNvbnRyb2wgPSBmaXRDb250cm9sLFxuICAgICAgICAgICAgICAgICAgdHVuZUdyaWQ9ZXhwYW5kLmdyaWQoXG4gICAgICAgICAgICAgICAgICAgIC5hbHBoYT0xLFxuICAgICAgICAgICAgICAgICAgICAubGFtYmRhPTEwXnNlcSgtNSwgNSwgbGVuZ3RoID0xNSkpLFxuICAgICAgICAgICAgICAgICAgZmFtaWx5PVwiYmlub21pYWxcIiwgcHJlUHJvY2VzcyA9IGMoXCJjZW50ZXJcIiwgXCJzY2FsZVwiKSwgbWV0cmljID0gXCJST0NcIilcbmxpYnJhcnkoUk9DUilcbmxpYnJhcnkocFJPQylcbmxvZy5wcmVkLnByb2JzPC1wcmVkaWN0KHNpbXBsZS5sYXNzby5wcmVkLHRlc3QsdHlwZT1cInByb2JcIilcbmhlYWQobG9nLnByZWQucHJvYnMpXG50aHJlc2hvbGQ9LjVcbmxvZy5wcmVkY2xhc3M8LWlmZWxzZShzaW1wbGUubGFzc28ucHJlZCR5PnRocmVzaG9sZCxcIk5vXCIsXCJZZXNcIilcbmxvZy5wcmVkY2xhc3M8LWZhY3Rvcihsb2cucHJlZGNsYXNzKVxuIyBjb25mdXNpb25NYXRyaXgobG9nLnByZWRjbGFzcyx0ZXN0JHkpXG4jR2V0IHRoZSBST0NcbmxvZy5yb2M8LXJvYyhyZXNwb25zZT10ZXN0JHkscHJlZGljdG9yPWxvZy5wcmVkLnByb2JzJHkpXG5wbG90KGxvZy5yb2MscHJpbnQudGhyZXM9XCJiZXN0XCIpXG5hdWMobG9nLnJvYylcblxucHJvYnNUZXN0IDwtIHByZWRpY3Qoc2ltcGxlLmxhc3NvLnByZWQsIHRlc3QsIHR5cGUgPSBcInJhd1wiKVxuY29uZnVzaW9uTWF0cml4KHByb2JzVGVzdCwgdGVzdCR5KVxuXG5gYGAifQ== --&gt;
 
 ```r
+library(caret)
+library(glmnet)
+set.seed(1234)
+fitControl &lt;- trainControl(method = &quot;cv&quot;,number = 5,classProbs=T,summaryFunction = twoClassSummary)
+simple.lasso.pred &lt;- train(y ~.,
+                  data=train, method = &quot;glmnet&quot;, 
+                  trControl = fitControl,
+                  tuneGrid=expand.grid(
+                    .alpha=1,
+                    .lambda=10^seq(-5, 5, length =15)),
+                  family=&quot;binomial&quot;, preProcess = c(&quot;center&quot;, &quot;scale&quot;), metric = &quot;ROC&quot;)
+library(ROCR)
+library(pROC)
+log.pred.probs&lt;-predict(simple.lasso.pred,test,type=&quot;prob&quot;)
+head(log.pred.probs)
+threshold=.5
+log.predclass&lt;-ifelse(simple.lasso.pred$y&gt;threshold,&quot;No&quot;,&quot;Yes&quot;)
+log.predclass&lt;-factor(log.predclass)
+# confusionMatrix(log.predclass,test$y)
+#Get the ROC
+log.roc&lt;-roc(response=test$y,predictor=log.pred.probs$y)
+plot(log.roc,print.thres=&quot;best&quot;)
+auc(log.roc)
+
+probsTest &lt;- predict(simple.lasso.pred, test, type = &quot;raw&quot;)
 confusionMatrix(probsTest, test$y)
 </code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiRXJyb3I6IGBkYXRhYCBhbmQgYHJlZmVyZW5jZWAgc2hvdWxkIGJlIGZhY3RvcnMgd2l0aCB0aGUgc2FtZSBsZXZlbHMuXG4ifQ== -->
-<pre><code>Error: `data` and `reference` should be factors with the same levels.</code></pre>
-<!-- rnb-output-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <p>Complex Model - Lasso</p>
